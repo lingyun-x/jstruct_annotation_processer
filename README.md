@@ -1,0 +1,1 @@
+# jstruct_annotation_processer
