@@ -21,6 +21,7 @@ import java.nio.ByteBuffer
 */
 object JStrcutProtocol : IPacketMatcher {
 
+    var protocolNumber = 1
 
     private val packetMatcher = ProtocolPacketMatcher()
 
@@ -32,15 +33,21 @@ object JStrcutProtocol : IPacketMatcher {
         return packetMatcher.getPacketClass(protocolNumber, byteBuffer)
     }
 
-    fun unpack(data: ByteArray): IPacketable? {
+    fun unpack(data: ByteArray): IPacketable {
         val byteBuffer = ByteBuffer.wrap(data)
-        var packetable = getPacketClass(0, byteBuffer)
+        var packetable = getPacketClass(protocolNumber, byteBuffer)
         if (packetable == null) {
             packetable = UnknowPacket::class.java
         }
         val packet = packetable.newInstance()
 
-        val elements = JStruct.unpack(packet.packetStruct(), data)
+        val elements = if (packet is UnknowPacket) {
+            listOf<Any>(data)
+        } else {
+            println("unpack packet:${packet::class} struct:${packet.packetStruct()}")
+            JStruct.unpack(packet.packetStruct(), data)
+        }
+
         packet.applyElements(elements)
         return packet
     }

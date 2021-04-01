@@ -26,12 +26,10 @@ import com.lingyun.lib.jstruct.protocol.IPacketable
     protocolNumber = 1, customSerialization = false, elementIndex = [
         ElementIndex(
             2, elementType = ElementType.INT32, elementValue = MessageType.BASIC_TYPE.toString()
-        ), ElementIndex(
-            3, elementType = ElementType.CHAR, elementValue = "A"
-        ), ElementIndex(4, ElementType.STRING, elementValue = "Hello")
+        )
     ]
 )
-abstract class BasicTypePacket : IPacketable {
+abstract class PrimitiveTypePacket : IPacketable {
     var head: PacketHead = PacketHead()
 
     var aByte: Byte = 0
@@ -57,32 +55,32 @@ abstract class BasicTypePacket : IPacketable {
     var byteArrayLen: Int = 2
 
     @StructAnnotation("@-1[b]")
-    var byteArray: ByteArray = byteArrayOf()
+    var byteArray: ByteArray = byteArrayOf(0x01, 0x02)
 
     var shortArrayLen: Int = 2
 
     @StructAnnotation("@-1[h]")
-    var shortArray: ShortArray = shortArrayOf()
+    var shortArray: ShortArray = shortArrayOf(0x7f01, 0x7f02)
 
     var intArrayLen: Int = 2
 
     @StructAnnotation("@-1[i]")
-    var intArray: IntArray = intArrayOf()
+    var intArray: IntArray = intArrayOf(0x01020304, 0x07060504)
 
     var longArrayLen: Int = 2
 
     @StructAnnotation("@-1[l]")
-    var longArray: LongArray = longArrayOf()
+    var longArray: LongArray = longArrayOf(0x0102030405060708, 0x0807060504030201)
 
     var floatArrayLen: Int = 2
 
     @StructAnnotation("@-1[f]")
-    var floatArray: FloatArray = floatArrayOf()
+    var floatArray: FloatArray = floatArrayOf(0.2f, 0.3f)
 
     var doubleArrayLen: Int = 2
 
     @StructAnnotation("@-1[d]")
-    var doubleArray: DoubleArray = doubleArrayOf()
+    var doubleArray: DoubleArray = doubleArrayOf(0.1, 0.2)
 
 
 }

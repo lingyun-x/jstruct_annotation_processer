@@ -2,11 +2,8 @@ package com.lingyun.lib.jstrcut.annotation.processor
 
 
 import com.google.auto.service.AutoService
-import com.google.gson.GsonBuilder
-import com.lingyun.lib.jstruct.annotation.ElementIndex
 import com.lingyun.lib.jstruct.annotation.ElementType
 import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
-import com.lingyun.lib.jstruct.annotation.TypeMirrorUtils
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -39,7 +36,6 @@ import javax.tools.Diagnostic
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedOptions(ProtocolProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
 class ProtocolProcessor : AbstractProcessor() {
-    val gson = GsonBuilder().setPrettyPrinting().create()
 
     companion object {
         const val KAPT_KOTLIN_GENERATED_OPTION_NAME = "kapt.kotlin.generated"

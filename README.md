@@ -1,1 +1,1 @@
-# jstruct_annotation_processer
+# JStruct Annotation Processer

@@ -19,5 +19,5 @@ package com.lingyun.sample
 object MessageType {
 
     const val BASIC_TYPE = 0x01
-    const val COMPLEX_TYPE = 0x01
+    const val COMPLEX_TYPE = 0x02
 }

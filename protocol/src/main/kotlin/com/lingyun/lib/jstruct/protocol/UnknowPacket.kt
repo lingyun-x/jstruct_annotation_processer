@@ -20,7 +20,7 @@ class UnknowPacket : IPacketable {
     var body: ByteArray = ByteArray(0)
 
     override fun packetStruct(): String {
-        return "1[b]"
+        return "${body.size}[b]"
     }
 
     override fun elements(): List<Any> {

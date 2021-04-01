@@ -35,7 +35,7 @@ abstract class ComplexTypePacket : IPacketable {
     var complexArrayLen: Int = 2
 
     @StructAnnotation("@-1[?]")
-    var complextData: Array<BasicEmbedInfo> = Array(10) {
+    var complextData: Array<BasicEmbedInfo> = Array(2) {
         BasicEmbedInfo()
     }
 
