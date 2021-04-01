@@ -1,0 +1,6 @@
+rootProject.name = "jstruct_annotation_processor"
+
+include ':jstruct_annotation'
+include ':jstruct_processor'
+include ':protocol'
+include ':sample'
