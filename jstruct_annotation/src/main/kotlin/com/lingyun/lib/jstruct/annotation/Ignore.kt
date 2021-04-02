@@ -1,7 +1,7 @@
 package com.lingyun.lib.jstruct.annotation
 
 /*
-* Created by mc_luo on 2021/3/29 .
+* Created by mc_luo on 2021/4/2 .
 * Copyright (c) 2021 The LingYun Authors. All rights reserved.
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +16,6 @@ package com.lingyun.lib.jstruct.annotation
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+@kotlin.annotation.Target(AnnotationTarget.CLASS, AnnotationTarget.FIELD)
 @kotlin.annotation.Retention(AnnotationRetention.SOURCE)
-annotation class ElementIndex(
-    val elementIndex: Int,
-    val elementType: ElementType,
-    val elementValue: String,
-) {
-
-}
+annotation class Ignore()

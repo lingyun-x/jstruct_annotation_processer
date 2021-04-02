@@ -20,10 +20,4 @@ package com.lingyun.lib.jstruct.annotation
 @kotlin.annotation.Retention(AnnotationRetention.SOURCE)
 annotation class StructAnnotation(val struct: String){
 
-    companion object{
-
-        fun getArraySizeExpression(){
-
-        }
-    }
 }

@@ -3,6 +3,7 @@ package com.lingyun.lib.jstrcut.annotation.processor
 
 import com.google.auto.service.AutoService
 import com.lingyun.lib.jstruct.annotation.ElementType
+import com.lingyun.lib.jstruct.annotation.Ignore
 import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -82,6 +83,14 @@ class ProtocolProcessor : AbstractProcessor() {
                 )
                 throw IllegalArgumentException("not support this type:$it")
             }
+            val ignoreElement: Element = processingEnv.elementUtils.getTypeElement(
+                Ignore::class.java.name
+            )
+            val ignoreType = ignoreElement.asType()
+            if (it.hasAnnotation(ignoreType)) {
+                return@forEach
+            }
+
 
             val packageElement = processingEnv.getElementUtils().getPackageOf(it)
             val packageName = packageElement.toString()
@@ -161,23 +170,16 @@ class ProtocolProcessor : AbstractProcessor() {
             val annotation = info.protocolAnnotation
             val protocolNumber = annotation.protocolNumber
             val exceptFirstElement = annotation.expectedElementIndex[0]
-
-            processingEnv.messager.printMessage(
-                Diagnostic.Kind.NOTE,
-                "elementType:${exceptFirstElement.elementType} is:${exceptFirstElement.elementType == ElementType.INT32}\r\n"
-            )
-
             val elementTypeCla = ClassName("com.lingyun.lib.jstruct.annotation", "ElementType")
 
-
             bodyFuncBuilder.addStatement(
-                "packetIndex = %T(%T::class.java,${exceptFirstElement.elementIndex},%T.%L,%S,null)",
+                "packetIndex = %T(%T::class.java,${exceptFirstElement.byteIndex},%T.%L,%S,null)",
                 packetIndexCla, cls, elementTypeCla, exceptFirstElement.elementType, exceptFirstElement.elementValue
             )
 
             for (i in 1 until annotation.expectedElementIndex.size) {
                 bodyFuncBuilder.addStatement(
-                    "packetIndex += %T(%T::class.java,${annotation.expectedElementIndex[i].elementIndex},%T.%L,%S,null)",
+                    "packetIndex += %T(%T::class.java,${annotation.expectedElementIndex[i].byteIndex},%T.%L,%S,null)",
                     packetIndexCla,
                     cls,
                     elementTypeCla,
@@ -186,7 +188,6 @@ class ProtocolProcessor : AbstractProcessor() {
                 )
             }
 
-            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "bodyFuncBuilder addElementMatcher")
             bodyFuncBuilder.addStatement(
                 "%T.addPacketIndex(${protocolNumber},packetIndex)",
                 packetMatchCls

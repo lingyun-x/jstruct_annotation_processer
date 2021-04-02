@@ -1,9 +1,6 @@
 package com.lingyun.sample
 
-import com.lingyun.lib.jstruct.annotation.ElementIndex
-import com.lingyun.lib.jstruct.annotation.ElementType
-import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
-import com.lingyun.lib.jstruct.annotation.StructAnnotation
+import com.lingyun.lib.jstruct.annotation.*
 import com.lingyun.lib.jstruct.protocol.IPacketable
 
 /*
@@ -23,8 +20,8 @@ import com.lingyun.lib.jstruct.protocol.IPacketable
 * limitations under the License.
 */
 @ProtocolAnnotation(
-    protocolNumber = 1, customSerialization = false, elementIndex = [
-        ElementIndex(
+    protocolNumber = 1, customSerialization = false, byteIndexs = [
+        ByteIndex(
             2, elementType = ElementType.INT32, elementValue = MessageType.BASIC_TYPE.toString()
         )
     ]

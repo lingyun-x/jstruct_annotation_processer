@@ -1,13 +1,10 @@
 package com.lingyun.sample
 
-import com.lingyun.lib.jstruct.annotation.ByteIndex
-import com.lingyun.lib.jstruct.annotation.ElementType
-import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
-import com.lingyun.lib.jstruct.annotation.StructAnnotation
+import com.lingyun.lib.jstruct.annotation.*
 import com.lingyun.lib.jstruct.protocol.IPacketable
 
 /*
-* Created by mc_luo on 2021/3/30 .
+* Created by mc_luo on 2021/4/2 .
 * Copyright (c) 2021 The LingYun Authors. All rights reserved.
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,23 +20,19 @@ import com.lingyun.lib.jstruct.protocol.IPacketable
 * limitations under the License.
 */
 @ProtocolAnnotation(
-    protocolNumber = 1, customSerialization = false, byteIndexs = [
+    protocolNumber = 1, byteIndexs = [
         ByteIndex(
-            2, elementType = ElementType.INT32, elementValue = MessageType.COMPLEX_TYPE.toString()
+            2, elementType = ElementType.INT32, elementValue = MessageType.TRANSIENT_TYPE.toString()
         )
     ]
 )
-abstract class ComplexTypePacket : IPacketable {
-    var packetHead: PacketHead = PacketHead()
+abstract class TransientPacket : IPacketable {
 
-    var complexArrayLen: Int = 2
+    var aByte: Byte = 0x01
 
-    @StructAnnotation("@-1[?]")
-    var complextData: Array<BasicEmbedInfo> = Array(2) {
-        BasicEmbedInfo()
-    }
+    @Ignore
+    var aTransientInt: Int = 0
 
-    var aByte: Byte = 0
-
-    var complext2: BasicEmbedInfo = BasicEmbedInfo()
+    @StructAnnotation("10[b]")
+    var aByteArray: ByteArray = ByteArray(10)
 }

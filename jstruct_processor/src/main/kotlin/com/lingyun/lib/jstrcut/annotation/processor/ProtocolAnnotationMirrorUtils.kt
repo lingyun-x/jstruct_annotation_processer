@@ -1,6 +1,5 @@
 package com.lingyun.lib.jstrcut.annotation.processor
 
-import com.lingyun.lib.jstruct.annotation.ElementIndex
 import com.lingyun.lib.jstruct.annotation.ElementType
 import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
 import com.sun.tools.javac.code.Attribute
@@ -31,6 +30,10 @@ object ProtocolAnnotationMirrorUtils {
         classElement: TypeElement,
         processingEnv: ProcessingEnvironment
     ): ProtocolAnnotationData {
+//        processingEnv.messager.printMessage(
+//            Diagnostic.Kind.NOTE,
+//            "ProtocolAnnotationMirrorUtils classElement:${classElement} \r\n"
+//        )
         val annotationMirrors = classElement.annotationMirrors
 
         val protocolElement: Element = processingEnv.elementUtils.getTypeElement(
@@ -40,14 +43,9 @@ object ProtocolAnnotationMirrorUtils {
         val protocolType = protocolElement.asType()
         val protocolMirror = annotationMirrors.first { it.annotationType == protocolType }
 
-        val typeValueElement = processingEnv.elementUtils.getTypeElement(
-            ElementIndex::class.java.name
-        )
-        val typeValueType = typeValueElement.asType()
-
         var protocolNumber: Int = 0
         var customSerialization: Boolean = false
-        var elementValues: Array<ElementIndexData>? = null
+        var elementValues: Array<ByteIndexData>? = null
 
         protocolMirror.elementValues.forEach {
             val element = it.key
@@ -60,13 +58,12 @@ object ProtocolAnnotationMirrorUtils {
                 "customSerialization" -> {
                     customSerialization = annotationValue.value as Boolean
                 }
-                "elementIndex" -> {
-
+                "byteIndexs" -> {
                     val elementTypeValueArray = annotationValue as Attribute.Array
 
                     val elementTypeValueDatas = try {
                         elementTypeValueArray.values.map {
-                            parseElementIndex(processingEnv, it)
+                            parseByteIndex(processingEnv, it)
                         }
                     } catch (e: Exception) {
                         processingEnv.messager.printMessage(
@@ -84,7 +81,7 @@ object ProtocolAnnotationMirrorUtils {
         return ProtocolAnnotationData(protocolNumber, customSerialization, elementValues!!)
     }
 
-    fun parseElementIndex(processingEnv: ProcessingEnvironment, attribute: Attribute): ElementIndexData {
+    fun parseByteIndex(processingEnv: ProcessingEnvironment, attribute: Attribute): ByteIndexData {
 
         val compound = attribute.value as Attribute.Compound
         //first step fetch elementType
@@ -108,7 +105,7 @@ object ProtocolAnnotationMirrorUtils {
         val elementType = ElementType.valueOf(elementTypeName)
 
         val elementIndexAttribute = compound.elementValues.entries.first {
-            it.key.name.toString() == "elementIndex"
+            it.key.name.toString() == "byteIndex"
         }
 
         val elementIndexValue = elementIndexAttribute.value.value as Int
@@ -119,14 +116,14 @@ object ProtocolAnnotationMirrorUtils {
 
         val elementValue = elementValueAttribute.value.value as String
 
-        return ElementIndexData(elementIndexValue, elementType, elementValue)
+        return ByteIndexData(elementIndexValue, elementType, elementValue)
     }
 
 
 }
 
-data class ElementIndexData(
-    val elementIndex: Int,
+data class ByteIndexData(
+    val byteIndex: Int,
     val elementType: ElementType,
     val elementValue: String
 )
@@ -134,6 +131,6 @@ data class ElementIndexData(
 data class ProtocolAnnotationData(
     val protocolNumber: Int,
     val customSerialization: Boolean,
-    val expectedElementIndex: Array<ElementIndexData>
+    val expectedElementIndex: Array<ByteIndexData>
 ) {
 }

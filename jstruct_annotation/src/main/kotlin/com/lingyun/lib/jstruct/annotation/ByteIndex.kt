@@ -16,10 +16,11 @@ package com.lingyun.lib.jstruct.annotation
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-@kotlin.annotation.Target(AnnotationTarget.CLASS)
 @kotlin.annotation.Retention(AnnotationRetention.SOURCE)
-annotation class ProtocolAnnotation(
-    val protocolNumber: Int = 0,
-    val byteIndexs: Array<ByteIndex>,
-    val customSerialization: Boolean = false
-)
+annotation class ByteIndex(
+    val byteIndex: Int,
+    val elementType: ElementType,
+    val elementValue: String,
+) {
+
+}

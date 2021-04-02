@@ -1,7 +1,7 @@
 package com.lingyun.lib.jstrcut.annotation.processor
 
+import com.lingyun.lib.jstruct.annotation.Ignore
 import com.lingyun.lib.jstruct.annotation.StructAnnotation
-import com.lingyun.lib.jstruct.annotation.TypeMirrorUtils
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.io.File
@@ -40,7 +40,7 @@ object PacketGenerater {
     ) {
 
         processingEnv.messager.printMessage(
-            Diagnostic.Kind.WARNING,
+            Diagnostic.Kind.NOTE,
             "generatePacketImpl element :$element \r\n"
         )
 
@@ -70,7 +70,7 @@ object PacketGenerater {
         fileSpec.writeTo(file)
 
         processingEnv.messager.printMessage(
-            Diagnostic.Kind.WARNING,
+            Diagnostic.Kind.NOTE,
             "generatePacketImpl element :$element finish\r\n"
         )
     }
@@ -290,7 +290,8 @@ object PacketGenerater {
         fieldElements.forEach {
             val fieldTypeMirror = it.asType()
             val fieldName = it.simpleName.toString()
-            val fieldElementName = if (root) fieldName else "${StringUtil.replaceFirstCharToLow(elementName)}.$fieldName"
+            val fieldElementName =
+                if (root) fieldName else "${StringUtil.replaceFirstCharToLow(elementName)}.$fieldName"
 
             when {
                 fieldTypeMirror.kind.isPrimitive -> {
@@ -459,13 +460,27 @@ object PacketGenerater {
         return funcSpecs
     }
 
+    /**
+     * get the element fields exclude which has transient annotation
+     * return the element fields
+     */
     fun getFieldElements(
         processingEnv: ProcessingEnvironment,
         element: Element
     ): List<Element> {
+
+        val ignoreElement: Element = processingEnv.elementUtils.getTypeElement(
+            Ignore::class.java.name
+        )
+        val ignoreType = ignoreElement.asType()
+
         val fieldElements = try {
             element.enclosedElements
                 .filter { it is VariableElement }
+                .filter {
+                    val annotationMirrors = it.annotationMirrors
+                    annotationMirrors.firstOrNull { it.annotationType == ignoreType } == null
+                }
         } catch (e: Exception) {
             processingEnv.messager.printMessage(
                 Diagnostic.Kind.NOTE,

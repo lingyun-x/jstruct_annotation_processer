@@ -1,4 +1,4 @@
-package com.lingyun.lib.jstruct.annotation
+package com.lingyun.lib.jstrcut.annotation.processor
 
 import javax.lang.model.element.Element
 import javax.lang.model.type.TypeKind
