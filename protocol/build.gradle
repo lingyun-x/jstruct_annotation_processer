@@ -9,7 +9,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     implementation(project(':jstruct_annotation'))
     implementation(project(':jstruct_processor'))
-    implementation 'com.lingyun.lib:jstruct:0.1.2'
+    api 'com.lingyun.lib:jstruct:0.2.1'
 }
 
 sourceSets {

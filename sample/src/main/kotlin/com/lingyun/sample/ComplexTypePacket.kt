@@ -1,9 +1,6 @@
 package com.lingyun.sample
 
-import com.lingyun.lib.jstruct.annotation.ByteIndex
-import com.lingyun.lib.jstruct.annotation.ElementType
-import com.lingyun.lib.jstruct.annotation.ProtocolAnnotation
-import com.lingyun.lib.jstruct.annotation.StructAnnotation
+import com.lingyun.lib.jstruct.annotation.*
 import com.lingyun.lib.jstruct.protocol.IPacketable
 
 /*
@@ -30,16 +27,19 @@ import com.lingyun.lib.jstruct.protocol.IPacketable
     ]
 )
 abstract class ComplexTypePacket : IPacketable {
+    @Embed
     var packetHead: PacketHead = PacketHead()
 
     var complexArrayLen: Int = 2
 
     @StructAnnotation("@-1[?]")
+    @Embed
     var complextData: Array<BasicEmbedInfo> = Array(2) {
         BasicEmbedInfo()
     }
 
     var aByte: Byte = 0
 
+    @Embed
     var complext2: BasicEmbedInfo = BasicEmbedInfo()
 }

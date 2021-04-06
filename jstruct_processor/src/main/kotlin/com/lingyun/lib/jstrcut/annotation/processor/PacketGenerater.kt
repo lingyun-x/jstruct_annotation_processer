@@ -188,15 +188,29 @@ object PacketGenerater {
                                 val arrayType = typeMirror as ArrayType
 
                                 if (arrayType.componentType.kind == TypeKind.DECLARED) {
-                                    val componentElement = (arrayType.componentType as DeclaredType).asElement()
+                                    if (element.hasEmbedAnnotation(processingEnv)) {
+                                        val componentElement = (arrayType.componentType as DeclaredType).asElement()
 
-                                    val componentStructType = getElementStruct(componentElement, processingEnv)
-                                    val numberExpression = fieldStruct.substring(0, fieldStruct.length - 3)
+                                        val componentStructType = getElementStruct(componentElement, processingEnv)
+                                        val numberExpression = fieldStruct.substring(0, fieldStruct.length - 3)
 
-                                    fieldStructSb.append(numberExpression)
-                                    fieldStructSb.append("[")
-                                    fieldStructSb.append(componentStructType)
-                                    fieldStructSb.append("]")
+                                        fieldStructSb.append(numberExpression)
+                                        fieldStructSb.append("<")
+                                        fieldStructSb.append(componentStructType)
+                                        fieldStructSb.append(">")
+                                    } else {
+                                        val componentElement = (arrayType.componentType as DeclaredType).asElement()
+
+                                        val componentStructType = getElementStruct(componentElement, processingEnv)
+                                        val numberExpression = fieldStruct.substring(0, fieldStruct.length - 3)
+
+                                        fieldStructSb.append(numberExpression)
+                                        fieldStructSb.append("[")
+                                        fieldStructSb.append(componentStructType)
+                                        fieldStructSb.append("]")
+                                    }
+                                } else {
+                                    throw IllegalAccessException("[?] only can be annotation on declared type field")
                                 }
                             } else {
                                 fieldStructSb.append(fieldStruct)
@@ -212,10 +226,18 @@ object PacketGenerater {
                             val declaredType = typeMirror as DeclaredType
                             val fieldTypeElement = declaredType.asElement()
 
-                            fieldStructSb.append("1{")
-                            val fs = getElementStruct(fieldTypeElement, processingEnv)
-                            fieldStructSb.append(fs)
-                            fieldStructSb.append("}")
+                            if (element.hasEmbedAnnotation(processingEnv)) {
+                                fieldStructSb.append("1<")
+                                val fs = getElementStruct(fieldTypeElement, processingEnv)
+                                fieldStructSb.append(fs)
+                                fieldStructSb.append(">")
+                            } else {
+                                fieldStructSb.append("1{")
+                                val fs = getElementStruct(fieldTypeElement, processingEnv)
+                                fieldStructSb.append(fs)
+                                fieldStructSb.append("}")
+                            }
+
                         }
                     }
                     else -> {
@@ -312,11 +334,19 @@ object PacketGenerater {
                             val fieldFucs = elementFuncs(processingEnv, componentTypeElement, funcNames, false)
                             funcSpecs.addAll(fieldFucs)
 
-                            bodyFuncBuilder.addStatement("fieldArrayElements = ArrayList()")
-                            bodyFuncBuilder.beginControlFlow("for (i in %L until ${fieldElementName}.size)", 0)
-                            bodyFuncBuilder.addStatement("fieldArrayElements.add($fieldFuncName($fieldElementName[i]))")
-                            bodyFuncBuilder.endControlFlow()
-                            bodyFuncBuilder.addStatement("elements.add(fieldArrayElements)")
+                            if (it.hasEmbedAnnotation(processingEnv)) {
+                                bodyFuncBuilder.addStatement("fieldArrayElements = ArrayList()")
+                                bodyFuncBuilder.beginControlFlow("for (i in %L until ${fieldElementName}.size)", 0)
+                                bodyFuncBuilder.addStatement("fieldArrayElements.addAll($fieldFuncName($fieldElementName[i]))")
+                                bodyFuncBuilder.endControlFlow()
+                                bodyFuncBuilder.addStatement("elements.addAll(fieldArrayElements)")
+                            } else {
+                                bodyFuncBuilder.addStatement("fieldArrayElements = ArrayList()")
+                                bodyFuncBuilder.beginControlFlow("for (i in %L until ${fieldElementName}.size)", 0)
+                                bodyFuncBuilder.addStatement("fieldArrayElements.add($fieldFuncName($fieldElementName[i]))")
+                                bodyFuncBuilder.endControlFlow()
+                                bodyFuncBuilder.addStatement("elements.add(fieldArrayElements)")
+                            }
                         }
                     }
                 }
@@ -325,7 +355,13 @@ object PacketGenerater {
                     val fieldElement = (fieldTypeMirror as DeclaredType).asElement() as TypeElement
                     val fieldFucs = elementFuncs(processingEnv, fieldElement, funcNames, false)
                     funcSpecs.addAll(fieldFucs)
-                    bodyFuncBuilder.addStatement("elements.add($fieldFuncName($fieldName))")
+
+                    if (it.hasEmbedAnnotation(processingEnv)) {
+                        bodyFuncBuilder.addStatement("elements.addAll($fieldFuncName($fieldName))")
+                    } else {
+                        bodyFuncBuilder.addStatement("elements.add($fieldFuncName($fieldName))")
+                    }
+
                 }
             }
 
@@ -374,20 +410,29 @@ object PacketGenerater {
         }
 
         bodyFuncBuilder.addStatement("var fieldArrayElements:%T", listAnyType)
+        bodyFuncBuilder.addStatement("var currentElementIndex = 0")
+        bodyFuncBuilder.addStatement("var embedDeclaredCount = 1")
+        bodyFuncBuilder.addStatement("var embedElementCount = 0")
+        bodyFuncBuilder.addStatement("var embedElements:%T", listAnyType)
 
         val filedFieldElements = getFieldElements(processingEnv, fieldElement)
-        var elementIndex = 0
 
         filedFieldElements.forEach {
             val typeMirror = it.asType()
             val elementName = it.simpleName.toString()
             val fieldElementName = "$fieldName.$elementName"
 
+            val structAnnotation = it.getAnnotation(StructAnnotation::class.java)
+            var fieldStruct = ""
+            if (structAnnotation != null) {
+                fieldStruct = structAnnotation.struct
+            }
+
             when {
                 typeMirror.kind.isPrimitive -> {
                     val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
                     bodyFuncBuilder.addStatement(
-                        "${fieldName}.${elementName} = elements.get(${elementIndex++}) as ${fieldTypeString}",
+                        "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",
                     )
                 }
                 typeMirror.kind == TypeKind.ARRAY -> {
@@ -398,7 +443,7 @@ object PacketGenerater {
                         componentType.kind.isPrimitive -> {
                             val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
                             bodyFuncBuilder.addStatement(
-                                "${fieldName}.${elementName} = elements.get(${elementIndex++}) as ${fieldTypeString}",
+                                "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",
                             )
                         }
                         componentType.kind == TypeKind.DECLARED -> {
@@ -406,16 +451,6 @@ object PacketGenerater {
                             val arrayFieldSimpleName = arrayFieldTypeElement.simpleName.toString()
 
                             val arrayFieldClass = classNameForElement(arrayFieldTypeElement)
-
-                            bodyFuncBuilder.addStatement(
-                                "fieldArrayElements = elements.get(${elementIndex++}) as %T",
-                                listAnyType
-                            )
-
-                            bodyFuncBuilder.addStatement(
-                                "$elementName = %T(fieldArrayElements.size){ %T() }",
-                                Array::class, arrayFieldClass
-                            )
 
                             val declaredFuncs =
                                 fieldApplyElementFunc(
@@ -426,12 +461,46 @@ object PacketGenerater {
                                 )
                             funcSpecs.addAll(declaredFuncs)
 
-                            bodyFuncBuilder.beginControlFlow("for(i in 0 until fieldArrayElements.size)")
-                            bodyFuncBuilder.addStatement(
-                                "applyElementsOf${arrayFieldSimpleName}(fieldArrayElements[i] as %T,%L[i])",
-                                listAnyType, fieldElementName
-                            )
-                            bodyFuncBuilder.endControlFlow()
+                            if (it.hasEmbedAnnotation(processingEnv)) {
+
+                                val jstructClassName = ClassName("com.lingyun.lib.jstruct", "JStruct")
+                                bodyFuncBuilder.addStatement(
+                                    "embedDeclaredCount = %T.getCount(%S,elements,currentElementIndex)",
+                                    jstructClassName, fieldStruct
+                                )
+
+                                bodyFuncBuilder.addStatement(
+                                    "$elementName = %T(embedDeclaredCount) { %T() }",
+                                    Array::class, arrayFieldClass
+                                )
+
+                                bodyFuncBuilder.beginControlFlow("for(i in 0 until embedDeclaredCount)")
+                                bodyFuncBuilder.addStatement("embedElements = elements.subList(currentElementIndex,elements.size)")
+
+                                bodyFuncBuilder.addStatement(
+                                    "embedElementCount = applyElementsOf${arrayFieldSimpleName}(embedElements,%L[i])",
+                                    elementName
+                                )
+                                bodyFuncBuilder.addStatement("currentElementIndex += embedElementCount")
+
+                                bodyFuncBuilder.endControlFlow()
+                            } else {
+                                bodyFuncBuilder.addStatement(
+                                    "fieldArrayElements = elements.get(currentElementIndex++) as %T",
+                                    listAnyType
+                                )
+
+                                bodyFuncBuilder.addStatement(
+                                    "$elementName = %T(fieldArrayElements.size){ %T() }",
+                                    Array::class, arrayFieldClass
+                                )
+                                bodyFuncBuilder.beginControlFlow("for(i in 0 until fieldArrayElements.size)")
+                                bodyFuncBuilder.addStatement(
+                                    "applyElementsOf${arrayFieldSimpleName}(fieldArrayElements[i] as %T,%L[i])",
+                                    listAnyType, fieldElementName
+                                )
+                                bodyFuncBuilder.endControlFlow()
+                            }
                         }
                     }
                 }
@@ -446,16 +515,26 @@ object PacketGenerater {
                             funcNames
                         )
                     funcSpecs.addAll(declaredFuncs)
-                    bodyFuncBuilder.addStatement(
-                        "applyElementsOf${declaredSimpleName}(elements[${elementIndex++}] as %T,%L)",
-                        listAnyType, elementName
-                    )
+
+                    if (it.hasEmbedAnnotation(processingEnv)) {
+                        bodyFuncBuilder.addStatement("embedElements = elements.subList(currentElementIndex,elements.size)")
+
+                        bodyFuncBuilder.addStatement(
+                            "embedElementCount = applyElementsOf${declaredSimpleName}(embedElements,%L)", elementName
+                        )
+                        bodyFuncBuilder.addStatement("currentElementIndex += embedElementCount")
+                    } else {
+                        bodyFuncBuilder.addStatement(
+                            "applyElementsOf${declaredSimpleName}(elements[currentElementIndex++] as %T,%L)",
+                            listAnyType, elementName
+                        )
+                    }
                 }
 
             }
         }
 
-        bodyFuncBuilder.addStatement("return ${elementIndex}")
+        bodyFuncBuilder.addStatement("return currentElementIndex")
         funcSpecs.add(bodyFuncBuilder.build())
         return funcSpecs
     }
