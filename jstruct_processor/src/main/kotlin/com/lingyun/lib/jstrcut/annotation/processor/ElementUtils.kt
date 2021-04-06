@@ -1,5 +1,8 @@
 package com.lingyun.lib.jstrcut.annotation.processor
 
+import com.lingyun.lib.jstruct.annotation.Embed
+import com.lingyun.lib.jstruct.annotation.Ignore
+import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.type.TypeMirror
 
@@ -22,4 +25,12 @@ import javax.lang.model.type.TypeMirror
 
 fun Element.hasAnnotation(annotationTypeMirror: TypeMirror): Boolean {
     return annotationMirrors.firstOrNull { it.annotationType == annotationTypeMirror } != null
+}
+
+fun Element.hasEmbedAnnotation(processingEnv: ProcessingEnvironment): Boolean {
+    val embenElement: Element = processingEnv.elementUtils.getTypeElement(
+        Embed::class.java.name
+    )
+    val embenType = embenElement.asType()
+    return hasAnnotation(embenType)
 }
