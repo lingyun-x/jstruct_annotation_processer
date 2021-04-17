@@ -1,15 +1,17 @@
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
-version 'unspecified'
+group 'com.lingyun-x'
+version '0.2.4'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation(project(':jstruct_annotation'))
-    implementation(project(':jstruct_processor'))
-    api 'com.lingyun.lib:jstruct:0.2.1'
+    api 'com.lingyun-x:jstruct:0.2.4'
+//    api 'com.lingyun-x:jstruct_annotation:0.2.4'
+//    api 'com.lingyun-x:jstruct_annotation_processor:0.2.4'
 }
 
 sourceSets {
@@ -27,3 +29,64 @@ compileKotlin {
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "central"
+            url = uri(nexusUrl)
+            credentials {
+                username = project.findProperty("nexusUsername") ?: System.getenv("NEXUS_USERNAME")
+                password = project.findProperty("nexusPassword") ?: System.getenv("NEXUS_PASSWORD")
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = "jstruct_protocol"
+                url = 'https://github.com/lingyun-x/jstruct_annotation_processor'
+                description = 'Interpret bytes as packed binary data'
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'lingyun'
+                        name = 'luolingfeng'
+                        email = '463027714@qq.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/lingyun-x/jstruct_annotation_processor.git'
+                    developerConnection = 'scm:git:ssh://github.com/lingyun-x/jstruct_annotation_processor.git'
+                    url = 'https://github.com/lingyun-x/jstruct_annotation_processor/'
+                }
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}
+

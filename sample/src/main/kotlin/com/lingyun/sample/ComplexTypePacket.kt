@@ -38,8 +38,18 @@ abstract class ComplexTypePacket : IPacketable {
         BasicEmbedInfo()
     }
 
+    var complexArrayLen2 :Int = 1
+
+    @StructAnnotation("@-1[?]")
+    var complextData2: Array<BasicEmbedInfo> = Array(1) {
+        BasicEmbedInfo()
+    }
+
     var aByte: Byte = 0
 
     @Embed
     var complext2: BasicEmbedInfo = BasicEmbedInfo()
+
+    @Embed
+    var complext3: BasicEmbedInfo = BasicEmbedInfo()
 }
