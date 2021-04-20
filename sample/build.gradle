@@ -6,9 +6,11 @@ version 'unspecified'
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-    implementation(project(':jstruct_annotation'))
-    implementation(project(':jstruct_processor'))
-    implementation(project(':protocol'))
+    implementation 'com.lingyun-x:jstruct:0.2.4'
+    implementation 'com.lingyun-x:jstruct_annotation:0.2.4'
+    implementation 'com.lingyun-x:jstruct_protocol:0.2.4'
+
+//    kapt 'com.lingyun-x:jstruct_processor:0.2.4'
     kapt(project(':jstruct_processor'))
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'

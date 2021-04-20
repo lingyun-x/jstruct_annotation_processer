@@ -1,6 +1,5 @@
 package com.lingyun.lib.jstrcut.annotation.processor
 
-import com.lingyun.lib.jstruct.annotation.Ignore
 import com.lingyun.lib.jstruct.annotation.StructAnnotation
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -46,6 +45,7 @@ object PacketGenerater {
 
         val classElement = element as TypeElement
         val typeString = classElement.asType().toString()
+
         val lastDotIndex = typeString.lastIndexOf(".")
         val packageName = typeString.substring(0, lastDotIndex)
         val className = typeString.substring(lastDotIndex + 1)
@@ -53,6 +53,7 @@ object PacketGenerater {
         val packetStructFunc = generatePacketStructFunc(element, processingEnv)
         val elementFuncs = elementFuncs(processingEnv, element, ArrayList(), true)
         val applyElementFuncs = fieldApplyElementFunc(processingEnv, classElement, "this", ArrayList<String>())
+
 
         val classNameImpl = className + "Impl"
 
@@ -79,7 +80,8 @@ object PacketGenerater {
         val fieldStructSb = StringBuffer()
         when (element) {
             is TypeElement -> {
-                val fieldElements = getFieldElements(processingEnv, element)
+                val fieldElements = ArrayList<VariableElement>()
+                getElementStructFields(processingEnv, element, fieldElements)
 
                 for (e in fieldElements) {
                     fieldStructSb.append(getElementStruct(e, processingEnv))
@@ -179,6 +181,20 @@ object PacketGenerater {
                             fieldStructSb.append(fieldStruct)
                         } else {
                             throw IllegalAccessException("DoubleArray need struct")
+                        }
+                    }
+                    TypeMirrorUtils.isString(typeMirror) -> {
+                        if (fieldStruct.isNotEmpty()) {
+                            fieldStructSb.append(fieldStruct)
+                        } else {
+                            throw IllegalAccessException("String need struct")
+                        }
+                    }
+                    TypeMirrorUtils.isStringArray(typeMirror) -> {
+                        if (fieldStruct.isNotEmpty()) {
+                            fieldStructSb.append(fieldStruct)
+                        } else {
+                            throw IllegalAccessException("Array<String> need struct")
                         }
                     }
                     typeMirror.kind == TypeKind.ARRAY -> {
@@ -308,8 +324,11 @@ object PacketGenerater {
         bodyFuncBuilder.addStatement("val elements = ArrayList<Any>()")
         bodyFuncBuilder.addStatement("var fieldArrayElements:%T", listAnyType)
 
-        val fieldElements = getFieldElements(processingEnv, element)
+        val fieldElements = ArrayList<VariableElement>()
+        getElementStructFields(processingEnv, element, fieldElements)
+
         fieldElements.forEach {
+
             val fieldTypeMirror = it.asType()
             val fieldName = it.simpleName.toString()
             val fieldElementName =
@@ -319,6 +338,9 @@ object PacketGenerater {
                 fieldTypeMirror.kind.isPrimitive -> {
                     bodyFuncBuilder.addStatement("elements.add(%L)", fieldElementName)
                 }
+                TypeMirrorUtils.isString(fieldTypeMirror) -> {
+                    bodyFuncBuilder.addStatement("elements.add(%L)", fieldElementName)
+                }
                 fieldTypeMirror.kind == TypeKind.ARRAY -> {
 
                     val arrayType = fieldTypeMirror as ArrayType
@@ -326,6 +348,9 @@ object PacketGenerater {
 
                     when {
                         componentType.kind.isPrimitive -> {
+                            bodyFuncBuilder.addStatement("elements.add(${fieldElementName})")
+                        }
+                        TypeMirrorUtils.isString(componentType) -> {
                             bodyFuncBuilder.addStatement("elements.add(${fieldElementName})")
                         }
                         componentType.kind == TypeKind.DECLARED -> {
@@ -415,7 +440,8 @@ object PacketGenerater {
         bodyFuncBuilder.addStatement("var embedElementCount = 0")
         bodyFuncBuilder.addStatement("var embedElements:%T", listAnyType)
 
-        val filedFieldElements = getFieldElements(processingEnv, fieldElement)
+        val filedFieldElements = ArrayList<VariableElement>()
+        getElementStructFields(processingEnv, fieldElement, filedFieldElements)
 
         filedFieldElements.forEach {
             val typeMirror = it.asType()
@@ -429,7 +455,7 @@ object PacketGenerater {
             }
 
             when {
-                typeMirror.kind.isPrimitive -> {
+                typeMirror.kind.isPrimitive || TypeMirrorUtils.isString(typeMirror) -> {
                     val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
                     bodyFuncBuilder.addStatement(
                         "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",
@@ -440,7 +466,7 @@ object PacketGenerater {
                     val componentType = arrayType.componentType
 
                     when {
-                        componentType.kind.isPrimitive -> {
+                        componentType.kind.isPrimitive || TypeMirrorUtils.isString(componentType) -> {
                             val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
                             bodyFuncBuilder.addStatement(
                                 "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",
@@ -539,60 +565,36 @@ object PacketGenerater {
         return funcSpecs
     }
 
-    /**
-     * get the element fields exclude which has transient annotation
-     * return the element fields
-     */
-    fun getFieldElements(
-        processingEnv: ProcessingEnvironment,
-        element: Element
-    ): List<Element> {
-
-        val ignoreElement: Element = processingEnv.elementUtils.getTypeElement(
-            Ignore::class.java.name
-        )
-        val ignoreType = ignoreElement.asType()
-
-        val fieldElements = try {
-            element.enclosedElements
-                .filter { it is VariableElement }
-                .filter {
-                    val annotationMirrors = it.annotationMirrors
-                    annotationMirrors.firstOrNull { it.annotationType == ignoreType } == null
-                }
-        } catch (e: Exception) {
-            processingEnv.messager.printMessage(
-                Diagnostic.Kind.NOTE,
-                "invoke fields fail:${e} \r\n"
-            )
-            throw e
-        }
-        return fieldElements
-    }
-
-    private fun getSuperclass(
-        processingEnv: ProcessingEnvironment,
-        type: TypeElement
-    ): TypeElement? {
-        return if (type.superclass.kind == TypeKind.DECLARED) {
-            val superclass = processingEnv.getTypeUtils().asElement(type.superclass) as TypeElement
-//            if (superclass.kind.isInterface){
-//                return null
-//            }
-            val name = superclass.qualifiedName.toString()
-            if (name.startsWith("java.")
-                || name.startsWith("javax.")
-                || name.startsWith("android.")
-            ) {
-                // Skip system classes, this just degrades performance
-                null
-            } else {
-                superclass
-            }
-        } else {
-            null
-        }
-    }
+//    /**
+//     * get the element fields exclude which has transient annotation
+//     * return the element fields
+//     */
+//    fun getFieldElements(
+//        processingEnv: ProcessingEnvironment,
+//        element: Element
+//    ): List<Element> {
+//
+//        val ignoreElement: Element = processingEnv.elementUtils.getTypeElement(
+//            Ignore::class.java.name
+//        )
+//        val ignoreType = ignoreElement.asType()
+//
+//        val fieldElements = try {
+//            element.enclosedElements
+//                .filter { it is VariableElement }
+//                .filter {
+//                    val annotationMirrors = it.annotationMirrors
+//                    annotationMirrors.firstOrNull { it.annotationType == ignoreType } == null
+//                }
+//        } catch (e: Exception) {
+//            processingEnv.messager.printMessage(
+//                Diagnostic.Kind.NOTE,
+//                "invoke fields fail:${e} \r\n"
+//            )
+//            throw e
+//        }
+//        return fieldElements
+//    }
 
     fun classNameForElement(element: Element): ClassName {
         val typeMirror = element.asType()
