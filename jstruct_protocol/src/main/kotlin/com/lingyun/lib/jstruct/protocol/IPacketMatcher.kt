@@ -1,5 +1,6 @@
 package com.lingyun.lib.jstruct.protocol
 
+import java.lang.annotation.ElementType
 import java.nio.ByteBuffer
 
 /*
@@ -22,8 +23,11 @@ interface IPacketMatcher {
 
     fun addPacketIndex(
         protocolNumber: Int,
+        packet: Class<out IPacketable>,
         packetIndex: IPacketIndex
     )
 
-    fun getPacketClass(protocolNumber: Int,byteBuffer: ByteBuffer): Class<out IPacketable>?
+    fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>?
+
+    fun getPacketClass(protocolNumber: Int, packetIndex: IPacketIndex): Class<out IPacketable>?
 }

@@ -21,8 +21,7 @@ import java.nio.ByteBuffer
 * limitations under the License.
 */
 data class PacketIndex(
-    override val packet: Class<out IPacketable>,
-    override val elementIndex: Int,
+    override val byteIndex: Int,
     override val elementType: ElementType,
     override val expect: String,
     override var dependice: IPacketIndex? = null
@@ -33,34 +32,34 @@ data class PacketIndex(
 
         val match = when (elementType) {
             ElementType.INT8 -> {
-                expect.toByte() == byteBuffer.get(elementIndex)
+                expect.toByte() == byteBuffer.get(byteIndex)
             }
             ElementType.UINT8 -> {
-                expect.toShort() == byteBuffer.get(elementIndex).toUByte().toShort()
+                expect.toShort() == byteBuffer.get(byteIndex).toUByte().toShort()
             }
             ElementType.CHAR -> {
-                expect[0] == byteBuffer.getChar(elementIndex)
+                expect[0] == byteBuffer.getChar(byteIndex)
             }
             ElementType.INT16 -> {
-                expect.toShort() == byteBuffer.getShort(elementIndex)
+                expect.toShort() == byteBuffer.getShort(byteIndex)
             }
             ElementType.UINT16 -> {
-                expect.toInt() == byteBuffer.getShort(elementIndex).toUShort().toInt()
+                expect.toInt() == byteBuffer.getShort(byteIndex).toUShort().toInt()
             }
             ElementType.INT32 -> {
-                expect.toInt() == byteBuffer.getInt(elementIndex)
+                expect.toInt() == byteBuffer.getInt(byteIndex)
             }
             ElementType.UINT32 -> {
-                expect.toLong() == byteBuffer.getInt(elementIndex).toUInt().toLong()
+                expect.toLong() == byteBuffer.getInt(byteIndex).toUInt().toLong()
             }
             ElementType.LONG -> {
-                expect.toLong() == byteBuffer.getLong(elementIndex)
+                expect.toLong() == byteBuffer.getLong(byteIndex)
             }
             ElementType.FLOAT -> {
-                expect.toFloat() == byteBuffer.getFloat(elementIndex)
+                expect.toFloat() == byteBuffer.getFloat(byteIndex)
             }
             ElementType.DOUBLE -> {
-                expect.toDouble() == byteBuffer.getDouble(elementIndex)
+                expect.toDouble() == byteBuffer.getDouble(byteIndex)
             }
             else -> {
                 false
@@ -72,6 +71,24 @@ data class PacketIndex(
         }
 
         return match
+    }
+
+    override fun match(index: IPacketIndex): Boolean {
+        if (index == this) return true
+
+        val match = index.byteIndex == byteIndex && elementType == index.elementType && expect == index.expect
+
+        if (!match) return false
+
+        if (index.dependice == dependice) {
+            return true
+        }
+
+        if (index.dependice != null && dependice != null) {
+            return dependice!!.match(index.dependice!!)
+        }
+
+        return false
     }
 
     operator fun plus(other: PacketIndex): PacketIndex {

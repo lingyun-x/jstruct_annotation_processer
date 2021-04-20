@@ -173,14 +173,13 @@ class ProtocolProcessor : AbstractProcessor() {
             val elementTypeCla = ClassName("com.lingyun.lib.jstruct.annotation", "ElementType")
 
             bodyFuncBuilder.addStatement(
-                "packetIndex = %T(%T::class.java,${exceptFirstElement.byteIndex},%T.%L,%S,null)",
-                packetIndexCla, cls, elementTypeCla, exceptFirstElement.elementType, exceptFirstElement.elementValue
+                "packetIndex = %T(${exceptFirstElement.byteIndex},%T.%L,%S,null)",
+                cls, elementTypeCla, exceptFirstElement.elementType, exceptFirstElement.elementValue
             )
 
             for (i in 1 until annotation.expectedElementIndex.size) {
                 bodyFuncBuilder.addStatement(
-                    "packetIndex += %T(%T::class.java,${annotation.expectedElementIndex[i].byteIndex},%T.%L,%S,null)",
-                    packetIndexCla,
+                    "packetIndex += %T(${annotation.expectedElementIndex[i].byteIndex},%T.%L,%S,null)",
                     cls,
                     elementTypeCla,
                     annotation.expectedElementIndex[i].elementType,
@@ -189,7 +188,8 @@ class ProtocolProcessor : AbstractProcessor() {
             }
 
             bodyFuncBuilder.addStatement(
-                "%T.addPacketIndex(${protocolNumber},packetIndex)",
+                "%T.addPacketIndex(%T::class.java,${protocolNumber},packetIndex)",
+                packetIndexCla,
                 packetMatchCls
             )
         }

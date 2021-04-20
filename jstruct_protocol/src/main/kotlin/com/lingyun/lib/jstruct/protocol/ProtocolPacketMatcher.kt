@@ -21,14 +21,27 @@ import java.nio.ByteBuffer
 class ProtocolPacketMatcher : IPacketMatcher {
     private val protocolNumberMatchers = HashMap<Int, IPacketMatcher>()
 
-    override fun addPacketIndex(protocolNumber: Int, packetIndex: IPacketIndex) {
+    override fun addPacketIndex(protocolNumber: Int, packet: Class<out IPacketable>, packetIndex: IPacketIndex) {
         var matcher = protocolNumberMatchers[protocolNumber]
         if (matcher == null) {
             matcher = PacketMatcher()
             protocolNumberMatchers[protocolNumber] = matcher
         }
 
-        matcher.addPacketIndex(protocolNumber, packetIndex)
+        matcher.addPacketIndex(protocolNumber, packet, packetIndex)
+    }
+
+    override fun getPacketClass(protocolNumber: Int, packetIndex: IPacketIndex): Class<out IPacketable>? {
+        for (pn in protocolNumber downTo -1) {
+            val matcher = protocolNumberMatchers[pn]
+            if (matcher != null) {
+                val cla = matcher.getPacketClass(protocolNumber, packetIndex)
+                if (cla != null) {
+                    return cla
+                }
+            }
+        }
+        return null
     }
 
     override fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>? {

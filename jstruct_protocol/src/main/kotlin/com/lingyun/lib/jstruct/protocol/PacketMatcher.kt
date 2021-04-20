@@ -1,5 +1,6 @@
 package com.lingyun.lib.jstruct.protocol
 
+import java.lang.annotation.ElementType
 import java.nio.ByteBuffer
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -7,7 +8,7 @@ import kotlin.collections.HashMap
 /*
 * Created by mc_luo on 2021/3/29 .
 * Copyright (c) 2021 The LingYun Authors. All rights reserved.
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
@@ -21,22 +22,23 @@ import kotlin.collections.HashMap
 * limitations under the License.
 */
 class PacketMatcher : IPacketMatcher {
-    val matcherMap = HashMap<Int, MutableList<IPacketIndex>>()
+    val matcherMap = HashMap<Int, MutableList<PacketElementIndex>>()
 
     override fun addPacketIndex(
         protocolNumber: Int,
+        packet: Class<out IPacketable>,
         packetIndex: IPacketIndex
     ) {
         var index: IPacketIndex? = packetIndex
 
         while (index != null) {
-            var packetIndexs = matcherMap.get(packetIndex.elementIndex)
+            var packetIndexs = matcherMap.get(packetIndex.byteIndex)
             if (packetIndexs == null) {
-                packetIndexs = ArrayList<IPacketIndex>()
-                matcherMap.put(packetIndex.elementIndex, packetIndexs)
+                packetIndexs = ArrayList<PacketElementIndex>()
+                matcherMap.put(packetIndex.byteIndex, packetIndexs)
             }
 
-            packetIndexs.add(packetIndex)
+            packetIndexs.add(PacketElementIndex(packet, packetIndex))
             packetIndexs.sort()
 
             index = index.dependice
@@ -47,15 +49,37 @@ class PacketMatcher : IPacketMatcher {
     override fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>? {
         val keys = matcherMap.keys.sorted()
         for (key in keys) {
-            val indexs = matcherMap[key]!!
+            val protocolIndex = matcherMap[key]!!
 
-            for (index in indexs) {
-                if (index.match(byteBuffer)) {
-                    return index.packet
+            for (elementIndex in protocolIndex) {
+                if (elementIndex.packetIndex.match(byteBuffer)) {
+                    return elementIndex.packet
                 }
             }
 
         }
         return null
+    }
+
+    override fun getPacketClass(protocolNumber: Int, packetIndex: IPacketIndex): Class<out IPacketable>? {
+        val keys = matcherMap.keys.sorted()
+        for (key in keys) {
+            val protocolIndex = matcherMap[key]!!
+
+            for (elementIndex in protocolIndex) {
+                if (elementIndex.packetIndex.match(packetIndex)) {
+                    return elementIndex.packet
+                }
+            }
+        }
+        return null
+    }
+
+    data class PacketElementIndex(val packet: Class<out IPacketable>, val packetIndex: IPacketIndex) :
+        Comparable<PacketElementIndex> {
+
+        override fun compareTo(other: PacketElementIndex): Int {
+            return packetIndex.compareTo(other.packetIndex)
+        }
     }
 }

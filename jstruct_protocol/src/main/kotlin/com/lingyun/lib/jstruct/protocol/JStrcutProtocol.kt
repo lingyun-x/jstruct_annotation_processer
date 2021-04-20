@@ -1,6 +1,7 @@
 package com.lingyun.lib.jstruct.protocol
 
 import com.lingyun.lib.jstruct.JStruct
+import java.lang.annotation.ElementType
 import java.nio.ByteBuffer
 
 /*
@@ -25,12 +26,16 @@ object JStrcutProtocol : IPacketMatcher {
 
     private val packetMatcher = ProtocolPacketMatcher()
 
-    override fun addPacketIndex(protocolNumber: Int, packetIndex: IPacketIndex) {
-        packetMatcher.addPacketIndex(protocolNumber, packetIndex)
+    override fun addPacketIndex(protocolNumber: Int, packet: Class<out IPacketable>, packetIndex: IPacketIndex) {
+        packetMatcher.addPacketIndex(protocolNumber,packet, packetIndex)
     }
 
     override fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>? {
         return packetMatcher.getPacketClass(protocolNumber, byteBuffer)
+    }
+
+    override fun getPacketClass(protocolNumber: Int, packetIndex: IPacketIndex): Class<out IPacketable>? {
+        return packetMatcher.getPacketClass(protocolNumber, packetIndex)
     }
 
     fun unpack(data: ByteArray): IPacketable {
@@ -44,7 +49,6 @@ object JStrcutProtocol : IPacketMatcher {
         val elements = if (packet is UnknowPacket) {
             listOf<Any>(data)
         } else {
-            println("unpack packet:${packet::class} struct:${packet.packetStruct()}")
             JStruct.unpack(packet.packetStruct(), data)
         }
 

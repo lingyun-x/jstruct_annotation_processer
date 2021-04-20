@@ -20,12 +20,12 @@ import java.nio.ByteBuffer
 * limitations under the License.
 */
 interface IPacketIndex : Comparable<IPacketIndex> {
-    val packet: Class<out IPacketable>
-    val elementIndex: Int
+    val byteIndex: Int
     val elementType: ElementType
     val expect: Any
     var dependice: IPacketIndex?
     fun match(byteBuffer: ByteBuffer): Boolean
+    fun match(index: IPacketIndex): Boolean
 
     fun deps(): Int {
         var deps = 1
