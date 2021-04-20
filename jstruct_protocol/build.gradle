@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 group 'com.lingyun-x'
-version '0.2.4'
+version '0.2.6'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])

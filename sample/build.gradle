@@ -8,9 +8,8 @@ dependencies {
 
     implementation 'com.lingyun-x:jstruct:0.2.4'
     implementation 'com.lingyun-x:jstruct_annotation:0.2.4'
-    implementation 'com.lingyun-x:jstruct_protocol:0.2.4'
 
-//    kapt 'com.lingyun-x:jstruct_processor:0.2.4'
+    implementation(project(':jstruct_protocol'))
     kapt(project(':jstruct_processor'))
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'

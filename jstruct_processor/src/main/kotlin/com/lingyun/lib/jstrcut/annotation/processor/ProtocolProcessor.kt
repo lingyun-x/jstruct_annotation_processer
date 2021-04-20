@@ -174,13 +174,13 @@ class ProtocolProcessor : AbstractProcessor() {
 
             bodyFuncBuilder.addStatement(
                 "packetIndex = %T(${exceptFirstElement.byteIndex},%T.%L,%S,null)",
-                cls, elementTypeCla, exceptFirstElement.elementType, exceptFirstElement.elementValue
+                packetIndexCla, elementTypeCla, exceptFirstElement.elementType, exceptFirstElement.elementValue
             )
 
             for (i in 1 until annotation.expectedElementIndex.size) {
                 bodyFuncBuilder.addStatement(
                     "packetIndex += %T(${annotation.expectedElementIndex[i].byteIndex},%T.%L,%S,null)",
-                    cls,
+                    packetIndexCla,
                     elementTypeCla,
                     annotation.expectedElementIndex[i].elementType,
                     annotation.expectedElementIndex[i].elementValue
@@ -188,9 +188,8 @@ class ProtocolProcessor : AbstractProcessor() {
             }
 
             bodyFuncBuilder.addStatement(
-                "%T.addPacketIndex(%T::class.java,${protocolNumber},packetIndex)",
-                packetIndexCla,
-                packetMatchCls
+                "%T.addPacketIndex(${protocolNumber},%T::class.java,packetIndex)",
+                packetMatchCls,cls
             )
         }
 
