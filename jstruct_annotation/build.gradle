@@ -1,8 +1,6 @@
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm'
-    id 'maven-publish'
-    id 'signing'
 }
 
 group 'com.lingyun-x'
@@ -10,66 +8,6 @@ version '0.2.4'
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
-}
-
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "central"
-            url = uri(nexusUrl)
-            credentials {
-                username = project.findProperty("nexusUsername") ?: System.getenv("NEXUS_USERNAME")
-                password = project.findProperty("nexusPassword") ?: System.getenv("NEXUS_PASSWORD")
-            }
-        }
-    }
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name = "jstruct_annotation"
-                url = 'https://github.com/lingyun-x/jstruct_annotation_processor'
-                description = 'Interpret bytes as packed binary data'
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id = 'lingyun'
-                        name = 'luolingfeng'
-                        email = '463027714@qq.com'
-                    }
-                }
-
-                scm {
-                    connection = 'scm:git:git://github.com/lingyun-x/jstruct_annotation_processor.git'
-                    developerConnection = 'scm:git:ssh://github.com/lingyun-x/jstruct_annotation_processor.git'
-                    url = 'https://github.com/lingyun-x/jstruct_annotation_processor/'
-                }
-            }
-        }
-    }
-}
-
-signing {
-    useGpgCmd()
-    sign publishing.publications.mavenJava
 }
 
 
