@@ -1,9 +1,6 @@
 package com.lingyun.lib.jstruct.protocol
 
-import java.lang.annotation.ElementType
 import java.nio.ByteBuffer
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 /*
 * Created by mc_luo on 2021/3/29 .
@@ -39,8 +36,6 @@ class PacketMatcher : IPacketMatcher {
             }
 
             packetIndexs.add(PacketElementIndex(packet, packetIndex))
-            packetIndexs.sort()
-
             index = index.dependice
         }
 
@@ -48,8 +43,9 @@ class PacketMatcher : IPacketMatcher {
 
     override fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>? {
         val keys = matcherMap.keys.sorted()
-        for (key in keys) {
-            val protocolIndex = matcherMap[key]!!
+
+        for (i in keys.size-1 downTo 0) {
+            val protocolIndex = matcherMap[keys[i]]!!
 
             for (elementIndex in protocolIndex) {
                 if (elementIndex.packetIndex.match(byteBuffer)) {
@@ -63,8 +59,8 @@ class PacketMatcher : IPacketMatcher {
 
     override fun getPacketClass(protocolNumber: Int, packetIndex: IPacketIndex): Class<out IPacketable>? {
         val keys = matcherMap.keys.sorted()
-        for (key in keys) {
-            val protocolIndex = matcherMap[key]!!
+        for (i in keys.size-1 downTo 0) {
+            val protocolIndex = matcherMap[keys[i]]!!
 
             for (elementIndex in protocolIndex) {
                 if (elementIndex.packetIndex.match(packetIndex)) {
