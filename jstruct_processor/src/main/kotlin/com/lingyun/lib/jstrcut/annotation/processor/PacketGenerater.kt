@@ -200,7 +200,7 @@ object PacketGenerater {
                     typeMirror.kind == TypeKind.ARRAY -> {
                         if (fieldStruct.isNotEmpty()) {
                             //need to fill with item struct
-                            if (fieldStruct.endsWith("[?]")) {
+                            if (fieldStruct.endsWith("[?]") || fieldStruct.endsWith("<?>")) {
                                 val arrayType = typeMirror as ArrayType
 
                                 if (arrayType.componentType.kind == TypeKind.DECLARED) {
