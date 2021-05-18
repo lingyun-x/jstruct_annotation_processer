@@ -4,6 +4,7 @@ import com.eav.gs.online.lib.protocol.PacketProtocols
 import com.lingyun.lib.jstruct.HexUtil
 import com.lingyun.lib.jstruct.protocol.JStrcutProtocol
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 /*
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test
 * limitations under the License.
 */
 internal class ComplexTypePacketTest {
+
 
     @Test
     fun testComplexPacket() {
@@ -45,5 +47,10 @@ internal class ComplexTypePacketTest {
         val unpackBytes = JStrcutProtocol.pack(unpackPacket)
         assert(bytes.contentEquals(unpackBytes))
 
+    }
+
+    fun testEmbedArrayPacket(){
+        PacketProtocols.initProtocols()
+//        val arrayPacket = EmbedArrayPacket()
     }
 }

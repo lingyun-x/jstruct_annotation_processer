@@ -1,5 +1,6 @@
 package com.lingyun.lib.jstrcut.annotation.processor
 
+import com.lingyun.lib.jstruct.annotation.Embed
 import com.lingyun.lib.jstruct.annotation.StructAnnotation
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -81,7 +82,11 @@ object PacketGenerater {
         when (element) {
             is TypeElement -> {
                 val fieldElements = ArrayList<VariableElement>()
-                getElementStructFields(processingEnv, element, fieldElements)
+                com.lingyun.lib.jstrcut.annotation.processor.getElementStructFields(
+                    processingEnv,
+                    element,
+                    fieldElements
+                )
 
                 for (e in fieldElements) {
                     fieldStructSb.append(getElementStruct(e, processingEnv))
@@ -325,7 +330,7 @@ object PacketGenerater {
         bodyFuncBuilder.addStatement("var fieldArrayElements:%T", listAnyType)
 
         val fieldElements = ArrayList<VariableElement>()
-        getElementStructFields(processingEnv, element, fieldElements)
+        com.lingyun.lib.jstrcut.annotation.processor.getElementStructFields(processingEnv, element, fieldElements)
 
         fieldElements.forEach {
 
@@ -333,7 +338,7 @@ object PacketGenerater {
             val fieldName = it.simpleName.toString()
             val fieldElementName =
                 if (root) fieldName else "${StringUtil.replaceFirstCharToLow(elementName)}.$fieldName"
-
+            val embedAnnotation = it.getAnnotation(Embed::class.java)
             when {
                 fieldTypeMirror.kind.isPrimitive -> {
                     bodyFuncBuilder.addStatement("elements.add(%L)", fieldElementName)
@@ -348,7 +353,13 @@ object PacketGenerater {
 
                     when {
                         componentType.kind.isPrimitive -> {
-                            bodyFuncBuilder.addStatement("elements.add(${fieldElementName})")
+                            if (embedAnnotation != null) {
+                                bodyFuncBuilder.beginControlFlow("for (i in %L until ${fieldElementName}.size)", 0)
+                                bodyFuncBuilder.addStatement("elements.add($fieldElementName[i])")
+                                bodyFuncBuilder.endControlFlow()
+                            } else {
+                                bodyFuncBuilder.addStatement("elements.add(${fieldElementName})")
+                            }
                         }
                         TypeMirrorUtils.isString(componentType) -> {
                             bodyFuncBuilder.addStatement("elements.add(${fieldElementName})")
@@ -441,7 +452,11 @@ object PacketGenerater {
         bodyFuncBuilder.addStatement("var embedElements:%T", listAnyType)
 
         val filedFieldElements = ArrayList<VariableElement>()
-        getElementStructFields(processingEnv, fieldElement, filedFieldElements)
+        com.lingyun.lib.jstrcut.annotation.processor.getElementStructFields(
+            processingEnv,
+            fieldElement,
+            filedFieldElements
+        )
 
         filedFieldElements.forEach {
             val typeMirror = it.asType()
@@ -449,6 +464,7 @@ object PacketGenerater {
             val fieldElementName = "$fieldName.$elementName"
 
             val structAnnotation = it.getAnnotation(StructAnnotation::class.java)
+            val embedAnnotation = it.getAnnotation(Embed::class.java)
             var fieldStruct = ""
             if (structAnnotation != null) {
                 fieldStruct = structAnnotation.struct
@@ -466,7 +482,29 @@ object PacketGenerater {
                     val componentType = arrayType.componentType
 
                     when {
-                        componentType.kind.isPrimitive || TypeMirrorUtils.isString(componentType) -> {
+                        componentType.kind.isPrimitive -> {
+                            val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
+                            val componentTypeString = TypeMirrorUtils.getTypeClassString(componentType)
+                            if (it.hasEmbedAnnotation(processingEnv)) {
+                                val jstructClassName = ClassName("com.lingyun.lib.jstruct", "JStruct")
+                                bodyFuncBuilder.addStatement(
+                                    "embedDeclaredCount = %T.getCount(%S,elements,currentElementIndex)",
+                                    jstructClassName, fieldStruct
+                                )
+                                bodyFuncBuilder.addStatement( "${fieldName}.${elementName} = ${fieldTypeString}(embedDeclaredCount)")
+
+                                bodyFuncBuilder.beginControlFlow("for(i in 0 until embedDeclaredCount)")
+                                bodyFuncBuilder.addStatement(
+                                    "${fieldName}.${elementName}[i] = elements.get(currentElementIndex++) as ${componentTypeString}",
+                                )
+                                bodyFuncBuilder.endControlFlow()
+                            } else {
+                                bodyFuncBuilder.addStatement(
+                                    "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",
+                                )
+                            }
+                        }
+                        TypeMirrorUtils.isString(componentType) -> {
                             val fieldTypeString = TypeMirrorUtils.getElementTypeClassString(it)
                             bodyFuncBuilder.addStatement(
                                 "${fieldName}.${elementName} = elements.get(currentElementIndex++) as ${fieldTypeString}",

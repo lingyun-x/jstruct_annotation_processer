@@ -45,10 +45,11 @@ fun getElementStructFields(
     type: TypeElement,
     ves: MutableList<VariableElement>
 ) {
-    val superTypeElement = getSuperclass(processingEnv, type)
+
+    val superTypeElement = com.lingyun.lib.jstrcut.annotation.processor.getSuperclass(processingEnv, type)
 
     if (superTypeElement != null) {
-        getElementStructFields(processingEnv, superTypeElement, ves)
+        com.lingyun.lib.jstrcut.annotation.processor.getElementStructFields(processingEnv, superTypeElement, ves)
     }
 
     val ignoreElement: Element = processingEnv.elementUtils.getTypeElement(
