@@ -27,7 +27,7 @@ object JStrcutProtocol : IPacketMatcher {
     private val packetMatcher = ProtocolPacketMatcher()
 
     override fun addPacketIndex(protocolNumber: Int, packet: Class<out IPacketable>, packetIndex: IPacketIndex) {
-        packetMatcher.addPacketIndex(protocolNumber,packet, packetIndex)
+        packetMatcher.addPacketIndex(protocolNumber, packet, packetIndex)
     }
 
     override fun getPacketClass(protocolNumber: Int, byteBuffer: ByteBuffer): Class<out IPacketable>? {
@@ -52,7 +52,10 @@ object JStrcutProtocol : IPacketMatcher {
             JStruct.unpack(packet.packetStruct(), data)
         }
 
-        packet.applyElements(elements)
+        try {
+            packet.applyElements(elements)
+        } catch (e: IndexOutOfBoundsException) {
+        }
         return packet
     }
 

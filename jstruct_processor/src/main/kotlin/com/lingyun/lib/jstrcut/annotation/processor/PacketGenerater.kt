@@ -55,6 +55,9 @@ object PacketGenerater {
         val elementFuncs = elementFuncs(processingEnv, element, ArrayList(), true)
         val applyElementFuncs = fieldApplyElementFunc(processingEnv, classElement, "this", ArrayList<String>())
 
+        applyElementFuncs.forEach {
+        }
+
 
         val classNameImpl = className + "Impl"
 
@@ -445,8 +448,9 @@ object PacketGenerater {
             bodyFuncBuilder.addModifiers(KModifier.OVERRIDE)
         }
 
-        bodyFuncBuilder.addStatement("var fieldArrayElements:%T", listAnyType)
         bodyFuncBuilder.addStatement("var currentElementIndex = 0")
+        bodyFuncBuilder.addStatement("try {")
+        bodyFuncBuilder.addStatement("var fieldArrayElements:%T", listAnyType)
         bodyFuncBuilder.addStatement("var embedDeclaredCount = 1")
         bodyFuncBuilder.addStatement("var embedElementCount = 0")
         bodyFuncBuilder.addStatement("var embedElements:%T", listAnyType)
@@ -491,7 +495,7 @@ object PacketGenerater {
                                     "embedDeclaredCount = %T.getCount(%S,elements,currentElementIndex)",
                                     jstructClassName, fieldStruct
                                 )
-                                bodyFuncBuilder.addStatement( "${fieldName}.${elementName} = ${fieldTypeString}(embedDeclaredCount)")
+                                bodyFuncBuilder.addStatement("${fieldName}.${elementName} = ${fieldTypeString}(embedDeclaredCount)")
 
                                 bodyFuncBuilder.beginControlFlow("for(i in 0 until embedDeclaredCount)")
                                 bodyFuncBuilder.addStatement(
@@ -598,6 +602,10 @@ object PacketGenerater {
             }
         }
 
+        bodyFuncBuilder.addStatement(
+            "}catch(e: %T){\n//版本兼容 新增字段造成老版本IndexOutOfBoundsException\n}",
+            IndexOutOfBoundsException::class.java
+        )
         bodyFuncBuilder.addStatement("return currentElementIndex")
         funcSpecs.add(bodyFuncBuilder.build())
         return funcSpecs
